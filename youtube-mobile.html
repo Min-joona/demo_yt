@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>YouTube</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --yt-red: #FF0000;
+      --yt-black: #000000;
+      --yt-white: #FFFFFF;
+      --yt-bg: #FFFFFF;
+      --yt-text: #0F0F0F;
+      --yt-text-secondary: #606060;
+      --yt-border: #E5E5E5;
+      --yt-chip-bg: #F2F2F2;
+      --yt-overlay: rgba(0,0,0,0.8);
+      --safe-area-top: env(safe-area-inset-top, 0px);
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-height: 56px;
+      --header-height: 48px;
+    }
+
+    [data-theme="dark"] {
+      --yt-bg: #0F0F0F;
+      --yt-text: #FFFFFF;
+      --yt-text-secondary: #AAAAAA;
+      --yt-border: #303030;
+      --yt-chip-bg: #272727;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+      background-color: var(--yt-bg);
+      color: var(--yt-text);
+      overflow-x: hidden;
+      padding-top: calc(var(--header-height) + var(--safe-area-top));
+      padding-bottom: calc(var(--nav-height) + var(--safe-area-bottom));
+    }
+
+    /* Scrollbar hiding */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Top App Bar */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--header-height) + var(--safe-area-top));
+      padding-top: var(--safe-area-top);
+      background-color: var(--yt-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 16px;
+      padding-right: 12px;
+      z-index: 1000;
+      transition: backdrop-filter 0.3s ease;
+    }
+
+    .top-bar.scrolled {
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    [data-theme="dark"] .top-bar.scrolled {
+      background-color: rgba(15, 15, 15, 0.9);
+    }
+
+    .youtube-logo {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 22px;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .top-icons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      position: relative;
+    }
+
+    .icon-btn:active {
+      background-color: rgba(0,0,0,0.1);
+    }
+
+    [data-theme="dark"] .icon-btn:active {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .icon-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--yt-text);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      background-color: var(--yt-red);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-left: 4px;
+    }
+
+    /* Category Chips */
+    .chips-container {
+      position: sticky;
+      top: calc(var(--header-height) + var(--safe-area-top));
+      background-color: var(--yt-bg);
+      z-index: 999;
+      padding: 12px 0;
+    }
+
+    .chips-scroll {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chip {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 500;
+      background-color: var(--yt-chip-bg);
+      color: var(--yt-text);
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      scroll-snap-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .chip.active {
+      background-color: var(--yt-text);
+      color: var(--yt-white);
+    }
+
+    .chip:active {
+      transform: scale(0.95);
+    }
+
+    /* Shorts Section */
+    .shorts-section {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--yt-border);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 12px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .shorts-icon {
+      color: var(--yt-red);
+    }
+
+    .view-all {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: var(--yt-text);
+      text-decoration: none;
+    }
+
+    .shorts-scroll {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .short-card {
+      flex-shrink: 0;
+      width: 160px;
+      scroll-snap-align: start;
+      cursor: pointer;
+    }
+
+    .short-thumbnail {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: var(--yt-chip-bg);
+    }
+
+    .short-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .short-duration {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .short-info {
+      padding-top: 8px;
+    }
+
+    .short-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .short-views {
+      font-size: 12px;
+      color: var(--yt-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Video Feed */
+    .video-feed {
+      padding: 16px;
+    }
+
+    .video-card {
+      margin-bottom: 16px;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+
+    .video-card.swiping {
+      transform: translateX(-80px);
+    }
+
+    .video-thumbnail-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      background-color: var(--yt-chip-bg);
+    }
+
+    .video-thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-duration {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .video-info {
+      display: flex;
+      gap: 12px;
+      padding-top: 12px;
+    }
+
+    .channel-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .video-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .video-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .video-meta {
+      font-size: 12px;
+      color: var(--yt-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .verified-badge {
+      width: 14px;
+      height: 14px;
+      fill: var(--yt-text-secondary);
+    }
+
+    .menu-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    .menu-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--yt-text);
+    }
+
+    /* Loading Skeleton */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--yt-chip-bg) 25%, #e0e0e0 50%, var(--yt-chip-bg) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    [data-theme="dark"] .skeleton {
+      background: linear-gradient(90deg, #272727 25%, #3a3a3a 50%, #272727 75%);
+      background-size: 200% 100%;
+    }
+
+    .skeleton-thumbnail {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+    }
+
+    .skeleton-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-line.short {
+      width: 60%;
+      height: 12px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--nav-height) + var(--safe-area-bottom));
+      padding-bottom: var(--safe-area-bottom);
+      background-color: var(--yt-bg);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      border-top: 1px solid var(--yt-border);
+      transition: transform 0.3s ease;
+    }
+
+    .bottom-nav.hidden {
+      transform: translateY(100%);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--yt-text-secondary);
+      transition: all 0.2s ease;
+      flex: 1;
+    }
+
+    .nav-item:active {
+      transform: scale(0.95);
+    }
+
+    .nav-item.active {
+      color: var(--yt-text);
+    }
+
+    .nav-item.active svg {
+      fill: var(--yt-text);
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--yt-text-secondary);
+      transition: fill 0.2s ease;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .create-btn {
+      width: 48px;
+      height: 32px;
+      background-color: var(--yt-red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(255,0,0,0.3);
+    }
+
+    .create-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    /* Video Player Overlay */
+    .video-player {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--yt-black);
+      z-index: 2000;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .video-player.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .video-player.visible {
+      opacity: 1;
+    }
+
+    .player-video {
+      flex: 1;
+      width: 100%;
+      object-fit: contain;
+      background-color: var(--yt-black);
+    }
+
+    .player-controls {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top) 16px 16px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .player-controls.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .player-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+    }
+
+    .player-back {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .player-back svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    .player-top-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .player-top-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .player-top-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    .player-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .play-pause-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.2);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+
+    .play-pause-btn svg {
+      width: 32px;
+      height: 32px;
+      fill: white;
+    }
+
+    .player-bottom {
+      padding-bottom: 16px;
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background-color: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-filled {
+      height: 100%;
+      background-color: var(--yt-red);
+      width: 0%;
+      position: relative;
+    }
+
+    .progress-handle {
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background-color: var(--yt-red);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .progress-container:hover .progress-handle,
+    .progress-container:active .progress-handle {
+      opacity: 1;
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      color: white;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .player-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .player-action-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .player-action-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    /* Miniplayer */
+    .miniplayer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(var(--nav-height) + var(--safe-area-bottom));
+      height: 70px;
+      background-color: var(--yt-bg);
+      display: none;
+      align-items: center;
+      padding: 0 12px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      z-index: 1500;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .miniplayer.active {
+      display: flex;
+      transform: translateY(0);
+    }
+
+    .miniplayer-thumbnail {
+      width: 120px;
+      height: 68px;
+      border-radius: 4px;
+      object-fit: cover;
+      background-color: var(--yt-chip-bg);
+    }
+
+    .miniplayer-info {
+      flex: 1;
+      padding: 0 12px;
+      min-width: 0;
+    }
+
+    .miniplayer-title {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .miniplayer-channel {
+      font-size: 11px;
+      color: var(--yt-text-secondary);
+      margin-top: 2px;
+    }
+
+    .miniplayer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .miniplayer-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .miniplayer-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--yt-text);
+    }
+
+    /* Pull to Refresh */
+    .pull-refresh {
+      position: fixed;
+      top: calc(var(--header-height) + var(--safe-area-top));
+      left: 0;
+      right: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(-100%);
+      transition: all 0.3s ease;
+      z-index: 998;
+      pointer-events: none;
+    }
+
+    .pull-refresh.visible {
+      opacity: 1;
+    }
+
+    .pull-refresh-icon {
+      width: 40px;
+      height: 40px;
+      animation: rotate 1s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Double Tap Like Animation */
+    .like-animation {
+      position: fixed;
+      pointer-events: none;
+      z-index: 3000;
+      animation: likeBurst 0.6s ease-out forwards;
+    }
+
+    @keyframes likeBurst {
+      0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.5) rotate(-10deg);
+      }
+      100% {
+        transform: scale(2) rotate(10deg);
+        opacity: 0;
+      }
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background-color: var(--yt-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 8px 0;
+      min-width: 200px;
+      z-index: 3000;
+      opacity: 0;
+      transform: scale(0.9);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .context-menu.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .context-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .context-item:active {
+      background-color: var(--yt-chip-bg);
+    }
+
+    .context-item svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--yt-text);
+    }
+
+    .context-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 2999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .context-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Swipe Actions */
+    .swipe-actions {
+      position: absolute;
+      right: -80px;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swipe-action {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .swipe-action.not-interested {
+      background-color: #606060;
+    }
+
+    .swipe-action.watch-later {
+      background-color: #065FD4;
+    }
+
+    .swipe-action svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    /* Theme Toggle (hidden in menu) */
+    .settings-menu {
+      position: fixed;
+      top: calc(var(--header-height) + var(--safe-area-top) + 8px);
+      right: 8px;
+      background-color: var(--yt-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 8px 0;
+      min-width: 180px;
+      z-index: 1001;
+      opacity: 0;
+      transform: scale(0.9);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .settings-menu.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    .settings-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .settings-item svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--yt-text);
+    }
+
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: none;
+    }
+
+    .settings-overlay.active {
+      display: block;
+    }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      body {
+        max-width: 428px;
+        margin: 0 auto;
+        border-left: 1px solid var(--yt-border);
+        border-right: 1px solid var(--yt-border);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="top-bar" id="topBar">
+    <div class="youtube-logo">
+      <svg class="logo-icon" viewBox="0 0 90 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
+        <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
+        <path d="M34.6024 13.0036L31.3945 1.41846H34.1932L35.3174 6.6701C35.6043 7.96361 35.8136 9.06662 35.9448 9.97913H36.0323C36.1264 9.32532 36.3381 8.22937 36.665 6.68892L37.8291 1.41846H40.6278L37.3799 13.0036V18.561H34.6024V13.0036Z" fill="currentColor"/>
+        <path d="M41.4697 18.1937C40.9053 17.6397 40.6231 16.8752 40.6231 15.9003V15.3109C40.6231 14.336 40.9033 13.5752 41.4637 13.0285C42.0241 12.4818 42.8784 12.2085 44.0265 12.2085C45.1594 12.2085 45.9977 12.4777 46.5413 13.0163C47.0849 13.5548 47.3567 14.3253 47.3567 15.3276V16.1512H43.344V16.4412C43.344 17.5136 43.8524 18.0497 44.8693 18.0497C45.4705 18.0497 45.9249 17.838 46.2325 17.4146H47.2682C46.9626 18.1149 46.5122 18.6354 45.917 18.9761C45.3217 19.3169 44.6341 19.4873 43.8541 19.4873C42.6428 19.4873 41.8074 19.0922 41.4697 18.1937ZM45.4455 14.5348C45.4455 13.7784 44.9972 13.4003 44.1005 13.4003C43.6339 13.4003 43.2841 13.5167 43.0511 13.7497C42.8182 13.9826 42.6733 14.3304 42.6164 14.7931H45.4455V14.5348Z" fill="currentColor"/>
+        <path d="M49.3878 4.97835V1.41846H52.5921V18.561H49.5841V16.6165H49.4754C48.8711 18.1394 47.7966 18.9008 46.252 18.9008C45.0676 18.9008 44.1348 18.5277 43.4537 17.7816C42.7725 17.0354 42.432 15.9798 42.432 14.6146V6.69934H45.6363V14.0316C45.6363 15.188 46.155 15.7662 47.1924 15.7662C47.6976 15.7662 48.1281 15.5918 48.4837 15.2429C48.8394 14.8941 49.0172 14.3545 49.0172 13.6241V4.97835H49.3878Z" fill="currentColor"/>
+        <path d="M62.7588 18.561H59.5545V12.5661H55.9058V18.561H52.7015V1.41846H55.9058V9.76553H59.5545V1.41846H62.7588V18.561Z" fill="currentColor"/>
+        <path d="M66.1662 4.97835V1.41846H69.3705V18.561H66.1662V4.97835Z" fill="currentColor"/>
+        <path d="M74.7141 19.4873C73.3078 19.4873 72.1884 19.0389 71.3558 18.1422C70.5232 17.2454 70.1069 16.0237 70.1069 14.4769V13.2113C70.1069 11.6645 70.5232 10.4428 71.3558 9.54607C72.1884 8.64931 73.3078 8.20093 74.7141 8.20093C76.1204 8.20093 77.2347 8.64931 78.0571 9.54607C78.8795 10.4428 79.2907 11.6645 79.2907 13.2113V14.4769C79.2907 16.0237 78.8795 17.2454 78.0571 18.1422C77.2347 19.0389 76.1204 19.4873 74.7141 19.4873ZM74.7141 16.8574C75.4879 16.8574 76.0036 16.5387 76.2612 15.9014C76.5189 15.264 76.6477 14.4049 76.6477 13.3241V13.0235C76.6477 11.9428 76.5189 11.0886 76.2612 10.4611C76.0036 9.83358 75.4879 9.51984 74.7141 9.51984C73.9403 9.51984 73.4247 9.83358 73.167 10.4611C72.9093 11.0886 72.7805 11.9428 72.7805 13.0235V13.3241C72.7805 14.4049 72.9093 15.264 73.167 15.9014C73.4247 16.5387 73.9403 16.8574 74.7141 16.8574Z" fill="currentColor"/>
+        <path d="M83.4835 12.2085C84.6739 12.2085 85.5777 12.632 86.1949 13.479C86.8121 14.326 87.1207 15.5374 87.1207 17.113V18.561H83.9164V17.113C83.9164 15.5975 83.3434 14.8397 82.1974 14.8397C81.637 14.8397 81.1926 15.0432 80.8644 15.4502C80.5362 15.8572 80.3721 16.4817 80.3721 17.3236V18.561H77.1678V8.36778H80.3721V12.9478H80.4808C81.0842 11.9142 82.0021 11.3974 83.2344 11.3974L83.4835 12.2085Z" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="top-icons">
+      <button class="icon-btn" aria-label="Search">
+        <svg viewBox="0 0 24 24"><path d="M20.87,20.17l-5.59-5.59C16.35,13.35,17,11.75,17,10c0-3.87-3.13-7-7-7s-7,3.13-7,7s3.13,7,7,7c1.75,0,3.35-0.65,4.58-1.71 l5.59,5.59L20.87,20.17z M10,16c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6S13.31,16,10,16z"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M12,22c1.1,0,2-0.9,2-2h-4C10,21.1,10.9,22,12,22z M18,16v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-0.83-0.67-1.5-1.5-1.5S10.5,3.17,10.5,4v0.68C7.64,5.36,6,7.92,6,11v5l-2,2v1h16v-1L18,16z M16,17H8v-6c0-2.48,1.51-4.5,4-4.5s4,2.02,4,4.5V17z"/></svg>
+        <span class="notification-badge">3</span>
+      </button>
+      <button class="icon-btn" id="profileBtn" aria-label="Profile">
+        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" alt="Profile" class="profile-avatar">
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Chips -->
+  <div class="chips-container">
+    <div class="chips-scroll" id="chipsScroll">
+      <button class="chip active" data-category="all">All</button>
+      <button class="chip" data-category="gaming">Gaming</button>
+      <button class="chip" data-category="music">Music</button>
+      <button class="chip" data-category="live">Live</button>
+      <button class="chip" data-category="mixes">Mixes</button>
+      <button class="chip" data-category="programming">Computer Programming</button>
+      <button class="chip" data-category="podcasts">Podcasts</button>
+      <button class="chip" data-category="recent">Recently uploaded</button>
+    </div>
+  </div>
+
+  <!-- Pull to Refresh -->
+  <div class="pull-refresh" id="pullRefresh">
+    <svg class="pull-refresh-icon" viewBox="0 0 24 24" fill="var(--yt-red)">
+      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+    </svg>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Shorts Section -->
+    <section class="shorts-section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg class="shorts-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.57 3.18-1.76 3.38-3.43.26-2.29-1.73-4.29-4.01-4.29-1.23 0-2.35.57-3.08 1.46-.73-.89-1.85-1.46-3.08-1.46-2.28 0-4.27 2-4.01 4.29.2 1.67 1.54 2.86 3.38 3.43l1.43.76-.3.18c-1.84.57-3.18 1.76-3.38 3.43-.26 2.29 1.73 4.29 4.01 4.29 1.23 0 2.35-.57 3.08-1.46.73.89 1.85 1.46 3.08 1.46 2.28 0 4.27-2 4.01-4.29-.2-1.67-1.54-2.86-3.38-3.43zM12 19.4c-1.61 0-2.92-1.31-2.92-2.92s1.31-2.92 2.92-2.92 2.92 1.31 2.92 2.92-1.31 2.92-2.92 2.92zm0-11.46c-1.61 0-2.92-1.31-2.92-2.92S10.39 2.1 12 2.1s2.92 1.31 2.92 2.92-1.31 2.92-2.92 2.92z"/>
+          </svg>
+          Shorts
+        </div>
+        <a href="#" class="view-all">
+          View all
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+          </svg>
+        </a>
+      </div>
+      <div class="shorts-scroll" id="shortsScroll"></div>
+    </section>
+
+    <!-- Video Feed -->
+    <div class="video-feed" id="videoFeed">
+      <!-- Skeleton Loading -->
+      <div class="video-skeleton">
+        <div class="skeleton skeleton-thumbnail"></div>
+        <div class="video-info">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="video-details" style="flex: 1;">
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-tab="home" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M4 10v11h6v-7h4v7h6V10l-8-7-8 7zm2 2.83v6.17H6v-6.17l-2 1.75L4 12.83z"/></svg>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-tab="shorts" aria-label="Shorts">
+      <svg viewBox="0 0 24 24"><path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.57 3.18-1.76 3.38-3.43.26-2.29-1.73-4.29-4.01-4.29-1.23 0-2.35.57-3.08 1.46-.73-.89-1.85-1.46-3.08-1.46-2.28 0-4.27 2-4.01 4.29.2 1.67 1.54 2.86 3.38 3.43l1.43.76-.3.18c-1.84.57-3.18 1.76-3.38 3.43-.26 2.29 1.73 4.29 4.01 4.29 1.23 0 2.35-.57 3.08-1.46.73.89 1.85 1.46 3.08 1.46 2.28 0 4.27-2 4.01-4.29-.2-1.67-1.54-2.86-3.38-3.43zM12 19.4c-1.61 0-2.92-1.31-2.92-2.92s1.31-2.92 2.92-2.92 2.92 1.31 2.92 2.92-1.31 2.92-2.92 2.92zm0-11.46c-1.61 0-2.92-1.31-2.92-2.92S10.39 2.1 12 2.1s2.92 1.31 2.92 2.92-1.31 2.92-2.92 2.92z"/></svg>
+      <span class="nav-label">Shorts</span>
+    </button>
+    <button class="nav-item" data-tab="create" aria-label="Create">
+      <div class="create-btn">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </div>
+    </button>
+    <button class="nav-item" data-tab="subscriptions" aria-label="Subscriptions">
+      <svg viewBox="0 0 24 24"><path d="M20 8H4V6h16v2zm-2-6H6v2h12V2zm4 10v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-8c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-6 4l-6-2.25v4.5L16 16z"/></svg>
+      <span class="nav-label">Subscriptions</span>
+    </button>
+    <button class="nav-item" data-tab="you" aria-label="You">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      <span class="nav-label">You</span>
+    </button>
+  </nav>
+
+  <!-- Video Player -->
+  <div class="video-player" id="videoPlayer">
+    <video class="player-video" id="playerVideo" playsinline></video>
+    <div class="player-controls" id="playerControls">
+      <div class="player-top">
+        <button class="player-back" id="playerBack">
+          <svg viewBox="0 0 24 24"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+        </button>
+        <div class="player-top-right">
+          <button class="player-top-btn" aria-label="Autoplay">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          </button>
+          <button class="player-top-btn" aria-label="Cast">
+            <svg viewBox="0 0 24 24"><path d="M2 16.5c.83 0 1.5.67 1.5 1.5h1.5c0-1.66-1.34-3-3-3v1.5zm0-3c2.48 0 4.5 2.02 4.5 4.5h1.5c0-3.31-2.69-6-6-6v1.5zm0-3c4.14 0 7.5 3.36 7.5 7.5h1.5c0-4.97-4.03-9-9-9v1.5zM21 3H3c-1.1 0-2 .9-2 2v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+          </button>
+          <button class="player-top-btn" aria-label="Settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          </button>
+          <button class="player-top-btn" aria-label="More">
+            <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="player-center">
+        <button class="play-pause-btn" id="playPauseBtn">
+          <svg id="pauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <svg id="playIcon" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+      <div class="player-bottom">
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-filled" id="progressFilled">
+              <div class="progress-handle"></div>
+            </div>
+          </div>
+        </div>
+        <div class="time-display">
+          <span id="currentTime">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+        <div class="player-actions">
+          <button class="player-action-btn" aria-label="Subtitles">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6-6h-6v-2h6v2zm0-4H4V6h16v2z"/></svg>
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button class="player-action-btn" aria-label="Fullscreen">
+              <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+            <button class="player-action-btn" id="miniplayerToggle" aria-label="Miniplayer">
+              <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H3V5h18v11z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Miniplayer -->
+  <div class="miniplayer" id="miniplayer">
+    <img class="miniplayer-thumbnail" id="miniplayerThumbnail" src="" alt="">
+    <div class="miniplayer-info">
+      <div class="miniplayer-title" id="miniplayerTitle"></div>
+      <div class="miniplayer-channel" id="miniplayerChannel"></div>
+    </div>
+    <div class="miniplayer-actions">
+      <button class="miniplayer-btn" id="miniplayerPlayPause">
+        <svg id="miniPauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        <svg id="miniPlayIcon" viewBox="0 0 24 24" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="miniplayer-btn" id="miniplayerClose">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-overlay" id="contextOverlay"></div>
+  <div class="context-menu" id="contextMenu">
+    <div class="context-item" id="addToQueue">
+      <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+      Add to queue
+    </div>
+    <div class="context-item" id="saveToWatchLater">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg>
+      Save to Watch later
+    </div>
+    <div class="context-item" id="saveToPlaylist">
+      <svg viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></svg>
+      Save to playlist
+    </div>
+    <div class="context-item" id="notInterested">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>
+      Not interested
+    </div>
+  </div>
+
+  <!-- Settings Menu -->
+  <div class="settings-overlay" id="settingsOverlay"></div>
+  <div class="settings-menu" id="settingsMenu">
+    <div class="settings-item" id="themeToggle">
+      <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <span id="themeText">Dark mode</span>
+    </div>
+  </div>
+
+  <script>
+    // Video Data
+    const videos = [
+      {
+        id: 1,
+        title: "Building a Full-Stack App with React & Node.js - Tutorial",
+        channel: "Traversy Media",
+        verified: true,
+        views: "245K",
+        time: "3 days ago",
+        duration: "45:23",
+        category: "programming",
+        thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+      },
+      {
+        id: 2,
+        title: "EPIC Gaming Moments That Will Blow Your Mind",
+        channel: "GameSpot",
+        verified: true,
+        views: "1.2M",
+        time: "5 hours ago",
+        duration: "12:45",
+        category: "gaming",
+        thumbnail: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+      },
+      {
+        id: 3,
+        title: "Top 10 Music Hits 2024 - Best Songs Playlist",
+        channel: "Music Hub",
+        verified: true,
+        views: "892K",
+        time: "1 day ago",
+        duration: "58:30",
+        category: "music",
+        thumbnail: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+      },
+      {
+        id: 4,
+        title: "Live Coding: Building a YouTube Clone from Scratch",
+        channel: "Dev Ed",
+        verified: true,
+        views: "56K",
+        time: "Live",
+        duration: "LIVE",
+        category: "live",
+        thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+      },
+      {
+        id: 5,
+        title: "Mix - Best of Lo-Fi Hip Hop Radio",
+        channel: "YouTube Music",
+        verified: true,
+        views: "3.4M",
+        time: "2 weeks ago",
+        duration: "2:34:12",
+        category: "mixes",
+        thumbnail: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+      },
+      {
+        id: 6,
+        title: "Joe Rogan Experience #2054 - Elon Musk",
+        channel: "PowerfulJRE",
+        verified: true,
+        views: "12M",
+        time: "1 week ago",
+        duration: "3:45:22",
+        category: "podcasts",
+        thumbnail: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1599566150163-29194dcabd36?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+      },
+      {
+        id: 7,
+        title: "JavaScript Tutorial for Beginners - Full Course",
+        channel: "Programming with Mosh",
+        verified: true,
+        views: "2.1M",
+        time: "1 month ago",
+        duration: "5:23:45",
+        category: "programming",
+        thumbnail: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
+      },
+      {
+        id: 8,
+        title: "Minecraft: Building a MEGA BASE in Survival Mode",
+        channel: "Dream",
+        verified: true,
+        views: "5.7M",
+        time: "2 days ago",
+        duration: "23:15",
+        category: "gaming",
+        thumbnail: "https://images.unsplash.com/photo-1587573089734-09cb69c0f2b4?w=640&h=360&fit=crop",
+        avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop",
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
+      }
+    ];
+
+    const shorts = [
+      { id: 1, title: "When you finally fix that bug", views: "2.3M views", duration: "0:58", thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=320&h=560&fit=crop" },
+      { id: 2, title: "Epic gaming win compilation", views: "5.1M views", duration: "0:45", thumbnail: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=320&h=560&fit=crop" },
+      { id: 3, title: "Coding memes that are too real", views: "1.8M views", duration: "0:32", thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=320&h=560&fit=crop" },
+      { id: 4, title: "Amazing nature clips #shorts", views: "8.9M views", duration: "0:28", thumbnail: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=320&h=560&fit=crop" },
+      { id: 5, title: "Funny cat fails compilation", views: "12M views", duration: "0:52", thumbnail: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=320&h=560&fit=crop" },
+      { id: 6, title: "Life hacks you need to know", views: "3.2M views", duration: "0:41", thumbnail: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=320&h=560&fit=crop" }
+    ];
+
+    // DOM Elements
+    const videoFeed = document.getElementById('videoFeed');
+    const shortsScroll = document.getElementById('shortsScroll');
+    const chipsScroll = document.getElementById('chipsScroll');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const playerVideo = document.getElementById('playerVideo');
+    const playerControls = document.getElementById('playerControls');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const progressFilled = document.getElementById('progressFilled');
+    const progressContainer = document.getElementById('progressContainer');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const miniplayer = document.getElementById('miniplayer');
+    const miniplayerPlayPause = document.getElementById('miniplayerPlayPause');
+    const miniPlayIcon = document.getElementById('miniPlayIcon');
+    const miniPauseIcon = document.getElementById('miniPauseIcon');
+    const bottomNav = document.getElementById('bottomNav');
+    const topBar = document.getElementById('topBar');
+    const contextMenu = document.getElementById('contextMenu');
+    const contextOverlay = document.getElementById('contextOverlay');
+    const pullRefresh = document.getElementById('pullRefresh');
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+
+    // State
+    let currentVideo = null;
+    let isPlaying = false;
+    let isControlsVisible = true;
+    let controlsTimeout = null;
+    let pullStartY = 0;
+    let isPulling = false;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTheme();
+      renderShorts();
+      renderVideos();
+      setupEventListeners();
+      setupPullToRefresh();
+      setupScrollEffects();
+      setupIntersectionObserver();
+    });
+
+    // Theme
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('youtube-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light mode' : 'Dark mode';
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('youtube-theme', newTheme);
+      document.getElementById('themeText').textContent = newTheme === 'dark' ? 'Light mode' : 'Dark mode';
+    }
+
+    // Render Shorts
+    function renderShorts() {
+      shortsScroll.innerHTML = shorts.map(short => `
+        <div class="short-card" data-id="${short.id}">
+          <div class="short-thumbnail">
+            <img src="${short.thumbnail}" alt="${short.title}" loading="lazy">
+            <span class="short-duration">${short.duration}</span>
+          </div>
+          <div class="short-info">
+            <div class="short-title">${short.title}</div>
+            <div class="short-views">${short.views}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Render Videos
+    function renderVideos(category = 'all') {
+      const filteredVideos = category === 'all' ? videos : videos.filter(v => v.category === category);
+      
+      videoFeed.innerHTML = filteredVideos.map(video => `
+        <div class="video-card" data-id="${video.id}">
+          <div class="video-thumbnail-container">
+            <img class="video-thumbnail" src="${video.thumbnail}" alt="${video.title}" loading="lazy">
+            <span class="video-duration">${video.duration}</span>
+          </div>
+          <div class="video-info">
+            <img class="channel-avatar" src="${video.avatar}" alt="${video.channel}">
+            <div class="video-details">
+              <div class="video-title">${video.title}</div>
+              <div class="video-meta">
+                ${video.channel}
+                ${video.verified ? `<svg class="verified-badge" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : ''}
+                <span>${video.views} views • ${video.time}</span>
+              </div>
+            </div>
+            <button class="menu-btn" aria-label="Menu">
+              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Add event listeners to video cards
+      document.querySelectorAll('.video-card').forEach(card => {
+        setupVideoCardInteractions(card);
+      });
+    }
+
+    // Video Card Interactions
+    function setupVideoCardInteractions(card) {
+      let touchStartTime = 0;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isLongPress = false;
+      let longPressTimer = null;
+
+      card.addEventListener('touchstart', (e) => {
+        touchStartTime = Date.now();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isLongPress = false;
+
+        longPressTimer = setTimeout(() => {
+          isLongPress = true;
+          card.style.transform = 'scale(0.98)';
+          showContextMenu(e.touches[0].clientX, e.touches[0].clientY);
+        }, 500);
+      }, { passive: true });
+
+      card.addEventListener('touchend', (e) => {
+        clearTimeout(longPressTimer);
+        card.style.transform = '';
+
+        const touchDuration = Date.now() - touchStartTime;
+        
+        if (!isLongPress && touchDuration < 300) {
+          const videoId = parseInt(card.dataset.id);
+          const video = videos.find(v => v.id === videoId);
+          if (video) {
+            openVideoPlayer(video);
+          }
+        }
+      });
+
+      card.addEventListener('touchmove', () => {
+        clearTimeout(longPressTimer);
+        card.style.transform = '';
+      }, { passive: true });
+
+      // Double tap for like
+      let lastTap = 0;
+      card.addEventListener('click', (e) => {
+        const currentTime = Date.now();
+        if (currentTime - lastTap < 300) {
+          showLikeAnimation(e.clientX, e.clientY);
+        }
+        lastTap = currentTime;
+      });
+
+      // Menu button
+      card.querySelector('.menu-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showContextMenu(e.clientX, e.clientY);
+      });
+    }
+
+    // Context Menu
+    function showContextMenu(x, y) {
+      contextMenu.style.left = `${Math.min(x, window.innerWidth - 220)}px`;
+      contextMenu.style.top = `${Math.min(y, window.innerHeight - 200)}px`;
+      contextMenu.classList.add('active');
+      contextOverlay.classList.add('active');
+    }
+
+    function hideContextMenu() {
+      contextMenu.classList.remove('active');
+      contextOverlay.classList.remove('active');
+    }
+
+    // Like Animation
+    function showLikeAnimation(x, y) {
+      const heart = document.createElement('div');
+      heart.className = 'like-animation';
+      heart.innerHTML = `<svg width="60" height="60" viewBox="0 0 24 24" fill="#FF0000"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+      heart.style.left = `${x - 30}px`;
+      heart.style.top = `${y - 30}px`;
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 600);
+    }
+
+    // Video Player
+    function openVideoPlayer(video) {
+      currentVideo = video;
+      playerVideo.src = video.videoUrl;
+      videoPlayer.classList.add('active');
+      
+      requestAnimationFrame(() => {
+        videoPlayer.classList.add('visible');
+      });
+
+      bottomNav.classList.add('hidden');
+      
+      playerVideo.play().then(() => {
+        isPlaying = true;
+        updatePlayPauseIcons();
+      }).catch(err => {
+        console.log('Autoplay prevented:', err);
+      });
+
+      hideControlsAfterDelay();
+    }
+
+    function closeVideoPlayer() {
+      videoPlayer.classList.remove('visible');
+      setTimeout(() => {
+        videoPlayer.classList.remove('active');
+        playerVideo.pause();
+        playerVideo.currentTime = 0;
+        isPlaying = false;
+        bottomNav.classList.remove('hidden');
+      }, 300);
+    }
+
+    function showMiniplayer() {
+      videoPlayer.classList.remove('visible');
+      setTimeout(() => {
+        videoPlayer.classList.remove('active');
+      }, 300);
+
+      miniplayer.classList.add('active');
+      document.getElementById('miniplayerThumbnail').src = currentVideo.thumbnail;
+      document.getElementById('miniplayerTitle').textContent = currentVideo.title;
+      document.getElementById('miniplayerChannel').textContent = currentVideo.channel;
+      bottomNav.classList.remove('hidden');
+    }
+
+    function hideMiniplayer() {
+      miniplayer.classList.remove('active');
+      playerVideo.pause();
+      isPlaying = false;
+    }
+
+    function expandMiniplayer() {
+      miniplayer.classList.remove('active');
+      videoPlayer.classList.add('active');
+      requestAnimationFrame(() => {
+        videoPlayer.classList.add('visible');
+      });
+      bottomNav.classList.add('hidden');
+    }
+
+    // Player Controls
+    function togglePlayPause() {
+      if (playerVideo.paused) {
+        playerVideo.play();
+        isPlaying = true;
+      } else {
+        playerVideo.pause();
+        isPlaying = false;
+      }
+      updatePlayPauseIcons();
+    }
+
+    function updatePlayPauseIcons() {
+      if (isPlaying) {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        miniPlayIcon.style.display = 'none';
+        miniPauseIcon.style.display = 'block';
+      } else {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        miniPlayIcon.style.display = 'block';
+        miniPauseIcon.style.display = 'none';
+      }
+    }
+
+    function toggleControls() {
+      isControlsVisible = !isControlsVisible;
+      playerControls.classList.toggle('visible', isControlsVisible);
+      if (isControlsVisible) {
+        hideControlsAfterDelay();
+      }
+    }
+
+    function hideControlsAfterDelay() {
+      clearTimeout(controlsTimeout);
+      controlsTimeout = setTimeout(() => {
+        if (isPlaying) {
+          isControlsVisible = false;
+          playerControls.classList.remove('visible');
+        }
+      }, 3000);
+    }
+
+    function updateProgress() {
+      const progress = (playerVideo.currentTime / playerVideo.duration) * 100;
+      progressFilled.style.width = `${progress}%`;
+      currentTimeEl.textContent = formatTime(playerVideo.currentTime);
+      durationEl.textContent = formatTime(playerVideo.duration);
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function seek(e) {
+      const rect = progressContainer.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      playerVideo.currentTime = pos * playerVideo.duration;
+    }
+
+    // Pull to Refresh
+    function setupPullToRefresh() {
+      let startY = 0;
+      
+      document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+          startY = e.touches[0].clientY;
+          isPulling = true;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        
+        const y = e.touches[0].clientY;
+        const diff = y - startY;
+        
+        if (diff > 0 && diff < 100) {
+          pullRefresh.style.transform = `translateY(${diff - 60}px)`;
+          pullRefresh.style.opacity = diff / 100;
+          pullRefresh.classList.add('visible');
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => {
+        if (!isPulling) return;
+        
+        const transform = pullRefresh.style.transform;
+        const diff = parseInt(transform.replace('translateY(', '').replace('px)', '')) + 60;
+        
+        if (diff > 80) {
+          // Trigger refresh
+          pullRefresh.style.transform = 'translateY(20px)';
+          setTimeout(() => {
+            renderVideos();
+            pullRefresh.style.transform = 'translateY(-100%)';
+            pullRefresh.classList.remove('visible');
+          }, 1000);
+        } else {
+          pullRefresh.style.transform = 'translateY(-100%)';
+          pullRefresh.classList.remove('visible');
+        }
+        
+        isPulling = false;
+      });
+    }
+
+    // Scroll Effects
+    function setupScrollEffects() {
+      let lastScroll = 0;
+      
+      window.addEventListener('scroll', () => {
+        const currentScroll = window.scrollY;
+        
+        if (currentScroll > 50) {
+          topBar.classList.add('scrolled');
+        } else {
+          topBar.classList.remove('scrolled');
+        }
+        
+        lastScroll = currentScroll;
+      }, { passive: true });
+    }
+
+    // Intersection Observer for Lazy Loading
+    function setupIntersectionObserver() {
+      const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src || img.src;
+            imageObserver.unobserve(img);
+          }
+        });
+      }, {
+        rootMargin: '50px'
+      });
+
+      document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+        imageObserver.observe(img);
+      });
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      // Navigation
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+        });
+      });
+
+      // Category Chips
+      document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          renderVideos(chip.dataset.category);
+        });
+      });
+
+      // Player controls
+      document.getElementById('playerBack').addEventListener('click', closeVideoPlayer);
+      playPauseBtn.addEventListener('click', togglePlayPause);
+      playerVideo.addEventListener('click', toggleControls);
+      playerVideo.addEventListener('timeupdate', updateProgress);
+      playerVideo.addEventListener('ended', () => {
+        isPlaying = false;
+        updatePlayPauseIcons();
+      });
+
+      // Progress bar
+      let isDragging = false;
+      progressContainer.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        seek(e);
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) seek(e);
+      });
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // Miniplayer
+      document.getElementById('miniplayerToggle').addEventListener('click', showMiniplayer);
+      miniplayer.addEventListener('click', expandMiniplayer);
+      miniplayerPlayPause.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePlayPause();
+      });
+      document.getElementById('miniplayerClose').addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideMiniplayer();
+      });
+
+      // Swipe down to close player
+      let playerTouchStartY = 0;
+      videoPlayer.addEventListener('touchstart', (e) => {
+        playerTouchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      videoPlayer.addEventListener('touchmove', (e) => {
+        const diff = e.touches[0].clientY - playerTouchStartY;
+        if (diff > 100) {
+          showMiniplayer();
+        }
+      }, { passive: true });
+
+      // Context menu
+      contextOverlay.addEventListener('click', hideContextMenu);
+      document.getElementById('notInterested').addEventListener('click', hideContextMenu);
+      document.getElementById('saveToWatchLater').addEventListener('click', hideContextMenu);
+      document.getElementById('addToQueue').addEventListener('click', hideContextMenu);
+      document.getElementById('saveToPlaylist').addEventListener('click', hideContextMenu);
+
+      // Settings
+      document.getElementById('profileBtn').addEventListener('click', () => {
+        settingsMenu.classList.toggle('active');
+        settingsOverlay.classList.toggle('active');
+      });
+      settingsOverlay.addEventListener('click', () => {
+        settingsMenu.classList.remove('active');
+        settingsOverlay.classList.remove('active');
+      });
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        toggleTheme();
+        settingsMenu.classList.remove('active');
+        settingsOverlay.classList.remove('active');
+      });
+    }
+  </script>
+</body>
+</html>
